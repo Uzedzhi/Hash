@@ -1,8 +1,8 @@
 section .text
-global MyStrlen
+global MyStrlen_Hash
 
 ; str address in rdi
-MyStrlen:
+MyStrlen_Hash:
     vpxor ymm1, ymm1, ymm1
 
     vmovdqu ymm0, [rdi] ; ymm0 - 32 bytes from the word
@@ -10,4 +10,5 @@ MyStrlen:
     vpmovmskb eax, ymm0
 
     bsf eax, eax
+    vzeroupper
     ret

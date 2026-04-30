@@ -20,6 +20,7 @@ string WORD_DELIMS                      = " \n\r";
 typedef struct {
     size_t size;
     list_t **Table;
+    unsigned int (*HashFunc)(const char *);
 } Hashmap_t;
 
 // =======================================================================
@@ -77,8 +78,7 @@ void HashMapCtor_internal(Hashmap_t *Hmap, size_t size);
 HmapError_t HashMapDtor_internal(Hashmap_t *Hmap);
 
 void SkipToNext(char ** str, char ch);
-size_t HashAllWordsFromFiletoHmap(Hashmap_t *Hmap, const char * FileName,
-                                       unsigned int (*HashFunc) (const char *), size_t RemainingLimit);
+size_t HashAllWordsFromFiletoHmap(Hashmap_t *Hmap, const char * FileName, size_t RemainingLimit);
 HmapError_t WriteHmapToFile(Hashmap_t *Hmap, const char * FileName);
 Hashmap_t *ReadHmapFromFile(const char * FileName);
 
@@ -86,8 +86,8 @@ char *GetBufferFromFile(FILE *fp, size_t FileSize);
 size_t GetFileSize(FILE *fp);
 
 char **GetTestingWords(const char *FileName, size_t *NumOfWords);
-int HmapFind(Hashmap_t *Hmap, const char *key, unsigned int (*FuncPtr)(const char *));
-int HmapAdd(Hashmap_t *Hmap, const char * value, unsigned int (*FuncPtr)(const char *));
+int HmapFind(Hashmap_t *Hmap, const char *key);
+int HmapAdd(Hashmap_t *Hmap, const char * value);
 int add_with_intercept_check(list_t *List, const char *value);
-HmapError_t HmapVerifier(Hashmap_t *Hmap, unsigned int (*HashFunc)(const char *));
+HmapError_t HmapVerifier(Hashmap_t *Hmap);
 #endif // HASH_H

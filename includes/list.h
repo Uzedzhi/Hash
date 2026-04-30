@@ -163,7 +163,7 @@ error_t listCtor_internal(list_t *list);
 void print_order_of_data(FILE * fp, list_t *list);
 void print_command_execution_failed(const char * file_name);
 extern "C" int MyStrcmp(const char *s1, const char *s2) noexcept;
-#ifdef USE_MYSTRCMP
+#if defined(USE_ASM) || defined(USE_ASMINLINE) || defined(USE_INTRIN)
 #define strcmp(str1, str2) MyStrcmp(str1, str2)
 #endif
 #endif // LIST_H

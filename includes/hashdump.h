@@ -17,12 +17,13 @@ typedef struct {
 } HmapStats_t; 
 
 typedef struct {
-    double ReadSpeed;
-    double FindSpeed;
-    double AddSpeed;
-    double StdReadSpeed;
-    double StdFindSpeed;
-    double StdAddSpeed;
+    double mean;
+    double std;
+    double median;
+    double user;
+    double SystemTime;
+    double MinTime;
+    double MaxTime;
 } SpeedStats_t; 
 
 #define CSV_DUMP_PRINT_HEADER()
@@ -34,8 +35,8 @@ double GetStdVal(double Array[NUM_OF_MEASURE_REPS], double MeanVal);
 double GetMeanVal(double Array[NUM_OF_MEASURE_REPS]);
 HmapError_t DumpHmapParamsToCsv();
 HmapError_t DumpSpeedToCsv(size_t HashFuncIdx);
-HmapError_t DumpHmapToHtml(Hashmap_t *Hmap, const char *FileName,
-                           size_t NumTestingWords, size_t NumReadWords, size_t HashFuncIdx);
+HmapError_t DumpHmapToHtml(Hashmap_t *Hmap, size_t NumTestingWords, 
+                           size_t NumReadWords, size_t HashFuncIdx);
 
 
 #endif // HASHDUMP_H

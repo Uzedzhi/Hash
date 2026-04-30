@@ -214,52 +214,6 @@ int max(int a, int b) {
     return (a > b) ? a : b;
 }
 
-extern "C" int MyStrcmp(const char *str1, const char *str2) noexcept {
-    int cmp = 1;
-    __asm (
-        ".intel_syntax noprefix\n"
-        
-        "vpxor ymm2, ymm2, ymm2\n"      // ymm2 = 0
-        "vmovdqu ymm0, [%[str1]]\n"     // ymm0 = str1
-        "vmovdqu ymm1, [%[str2]]\n"     // ymm1 = str2
-        
-        "vpcmpeqb ymm1, ymm0, ymm1\n"   // ymm1: 0xFF if str1[i] == str2[i]
-        "vpcmpeqb ymm2, ymm0, ymm2\n"   // ymm2: 0xFF if str1[i] == 0
-
-        "vpmovmskb ecx, ymm1\n"         // ecx[i] = 1 if str1[i] == str2[i]
-        "vpmovmskb eax, ymm2\n"         // eax[i] = 1 if str1[i] == 0
-
-        "not ecx\n"                     // ecx[i] = 1 if str1[i] != str2[i]
-        
-        "test ecx, ecx\n"
-        "jz .Equal\n"
-
-        "bsf ecx, ecx\n"
-        "bsf eax, eax\n"
-        
-        "cmp ecx, eax\n"
-        "ja .Equal\n"
-
-        // Not Equal
-        "mov %[result], 1\n"
-        "jmp .Exit\n"
-
-        // Equal
-        ".Equal:\n"
-        "mov %[result], 0\n"
-        "jmp .Exit\n"
-
-        ".Exit:\n"
-        "vzeroupper\n\t"
-        ".att_syntax prefix\n\t"
-        : [result] "=r" (cmp)
-        : [str1]   "r"  (str1), [str2] "r" (str2)
-        : "rax", "rcx", "ymm0", "ymm1", "ymm2", "cc"
-    );
-
-    return cmp;
-}
-
 void linearize_list_by_order(list_t *list) {
     sassert(list, ERR_PTR_NULL);
     int current = list->next[0];

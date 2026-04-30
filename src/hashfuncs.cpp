@@ -2,7 +2,6 @@
 #include <string.h>
 
 #include "hashfuncs.h"
-extern "C" size_t MyStrlen(const char *str);
 
 unsigned int SDBM_Hash(const char * str) {
     unsigned int hash = 0;
@@ -31,10 +30,6 @@ unsigned int FirstAsciiChar_Hash(const char * str) {
 
 unsigned int Strlen_Hash(const char * str) {
     return strlen(str);
-}
-
-unsigned int StrlenIntrinsic_Hash(const char * str) {
-    return MyStrlen(str);
 }
 
 unsigned int AsciiSum_Hash(const char * str) {
@@ -68,27 +63,15 @@ unsigned int CRC32_Hash(const char *data) {
         hash ^= *data;
         //          num of bits in a byte
         //                 \|/
-        for (int j = 0; j < 8; j++) {
-            if (hash & 1) {
+        for (size_t j = 0; j < 8; j++) {
+            if (hash & 1)
                 hash = (hash >> 1) ^ 0xEDB88320;
-            } else {
+            else
                 hash >>= 1;
-            }
         }
         data++;
     }
     return ~hash; 
-}
-
-unsigned int CRC32Intrinsic_Hash(const char *str) {
-    unsigned int hash = 0xFFFFFFFF;
-
-    while (*str) {
-        hash = _mm_crc32_u8(hash, *str);
-        str++;
-    }
-    
-    return hash ^ 0xFFFFFFFF; // Финальный XOR (стандарт CRC32)
 }
 
 unsigned int FNV1A_Hash(const char *str) {

@@ -70,11 +70,9 @@ int add_with_intercept_check(list_t *List, const char * value) {
     return 1;
 }
 
-size_t HashAllWordsFromFiletoHmap(Hashmap_t *Hmap, const char * FileName,
-                                       unsigned int (*HashFunc) (const char *), size_t RemainingLimit) {
+size_t HashAllWordsFromFiletoHmap(Hashmap_t *Hmap, const char * FileName, size_t RemainingLimit) {
     sassert(Hmap,       ERR_PTR_NULL_HMAP);
     sassert(FileName,   ERR_PTR_NULL_HMAP);
-    sassert(HashFunc,   ERR_PTR_NULL_HMAP);
 
     FILE *fp = fopen(FileName, "rb");
     RET_ASSERT(fp, 0, "файл \"%s\" не существует", FileName);
@@ -84,13 +82,12 @@ size_t HashAllWordsFromFiletoHmap(Hashmap_t *Hmap, const char * FileName,
     char *token         = strtok(FileBuffer, WORD_DELIMS);
 
     size_t WordsCount = 0;
-
     while (token && *token) {
         if (WordsCount >= RemainingLimit)
             break;
 
-        HmapAdd(Hmap, token, HashFunc);
-        WordsCount++;
+        if (HmapAdd(Hmap, token));
+            WordsCount++;
     
         token = strtok(NULL, WORD_DELIMS);
     }
@@ -154,22 +151,22 @@ Hashmap_t *ReadHmapFromFile(const char * FileName) {
     return Hmap;
 }
 
-int HmapAdd(Hashmap_t *Hmap, const char * value, unsigned int (*HashFunc)(const char *)) {
+int HmapAdd(Hashmap_t *Hmap, const char * value) {
     sassert(Hmap,   ERR_PTR_NULL);
     sassert(value,  ERR_PTR_NULL);
-    CHECK_FUNC_AND_RET_IF_ERR(HmapVerifier(Hmap, HashFunc));
+    CHECK_FUNC_AND_RET_IF_ERR(HmapVerifier(Hmap));
 
-    size_t Index = HashFunc(value) % Hmap->size;
+    size_t Index = Hmap->HashFunc(value) % Hmap->size;
     bool FuncRetValue = add_with_intercept_check(Hmap->Table[Index], value);
     return FuncRetValue;
 }
 
-int HmapFind(Hashmap_t *Hmap, const char *key, unsigned int (*HashFunc)(const char *)) {
+int HmapFind(Hashmap_t *Hmap, const char *key) {
     sassert(Hmap, ERR_PTR_NULL);
     sassert(key,  ERR_PTR_NULL);
-    CHECK_FUNC_AND_RET_IF_ERR(HmapVerifier(Hmap, HashFunc));
+    CHECK_FUNC_AND_RET_IF_ERR(HmapVerifier(Hmap));
 
-    size_t index = HashFunc(key) % Hmap->size;
+    size_t index = Hmap->HashFunc(key) % Hmap->size;
     list_iterator_ctor(ListIter, Hmap->Table[index]);
 
     while (!list_iterator_end(&ListIter)) {
@@ -229,7 +226,7 @@ bool ValueInArray(char * value, char * Array[], size_t ListSize) {
 }
 
 #ifndef NDEBUG
-HmapError_t HmapVerifier(Hashmap_t *Hmap, unsigned int (*HashFunc)(const char *)) {
+HmapError_t HmapVerifier(Hashmap_t *Hmap) {
     sassert(Hmap, ERR_PTR_NULL);
     if (Hmap->size >= HMAP_MAX_SIZE || Hmap->size == 0)
         add_error(ERR_INVALID_SIZE_HMAP,
@@ -252,7 +249,7 @@ HmapError_t HmapVerifier(Hashmap_t *Hmap, unsigned int (*HashFunc)(const char *)
             data_t value = list_iterator_value(&ListIter);
             ArrayOfWords[j] = value;
 
-            if (HashFunc(value) % Hmap->size != hash)
+            if (Hmap->HashFunc(value) % Hmap->size != hash)
                 add_error(ERR_INVALID_HASH_HMAP, 
                                      "хеш для строки <%s> не совпадает с ее позицией в хеш функции", value);
             if (ValueInArray(value, ArrayOfWords, j))
@@ -264,7 +261,7 @@ HmapError_t HmapVerifier(Hashmap_t *Hmap, unsigned int (*HashFunc)(const char *)
     return OK_HMAP;
 }
 #else
-HmapError_t HmapVerifier(Hashmap_t *Hmap, unsigned int (*HashFunc)(const char *)) {return OK_HMAP;}
+HmapError_t HmapVerifier(Hashmap_t *Hmap) {return OK_HMAP;}
 #endif 
 
 HmapError_t PrintListSizeToFile(Hashmap_t *Hmap, const char * FileName) {
@@ -274,6 +271,7 @@ HmapError_t PrintListSizeToFile(Hashmap_t *Hmap, const char * FileName) {
     FILE *fp = fopen(FileName, "w");
     RET_ASSERT(fp, ERR_PTR_NULL_HMAP, "не удалось открыть файл %s", FileName);
 
+    fprintf(fp, "%zu\n", Hmap->size);
     for (size_t i = 0; i < Hmap->size; i++) {
         fprintf(fp, "%zu\n", getListSize(Hmap->Table[i]));
     }
