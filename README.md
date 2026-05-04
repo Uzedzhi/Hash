@@ -23,7 +23,7 @@
 Измерения будем проводить при помощи hyperfine.
 Для повторения теста:
  ```
-hyperfine ./bin/hash texts/usa.txt --warmup 5 --runs 5 --export-csv <out_file_name>.txt
+hyperfine ./bin/hash texts/usa.txt --warmup 5 --runs 20 --export-csv <out_file_name>.txt
  ```
 
 Для анализа того, какая функция нуждается в оптимизации будет использовалось профилирование инструментом callgrind.
