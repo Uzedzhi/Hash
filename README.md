@@ -163,14 +163,22 @@ valgrind  --tool=callgrind
 
 Получили ускорение примерно на 9-12% (на 11% для CRC32)
 
-## Профилировщик CRC32 после strcmp, strlen
-<img width="1186" height="624" alt="image" src="https://github.com/user-attachments/assets/75a29060-05b5-4597-8fbd-bee0fe101404" />
+## Профилировщик SDBM
+
+<img width="1494" height="583" alt="image" src="https://github.com/user-attachments/assets/ecaad0ac-45fa-4956-96f3-6960931b38f8" />
+
+## Профилировщик FNV1A
+
+<img width="1498" height="590" alt="image" src="https://github.com/user-attachments/assets/b5cc8777-f802-4c9c-9de4-e8c4dfe670ad" />
+
+## Профилировщик CRC32
+
+<img width="1498" height="590" alt="image" src="https://github.com/user-attachments/assets/10c924e5-aafe-4333-ba4b-13964e00fbfb" />
 
 ## Итоги
-
 | Оптимизация       | Время          | Ускорение этапа  | Ускорение общее |
 |-------------------|----------------|------------------|-----------------|
-| без опт           | 7.960 ± 0.062  | -                | 0               |
+| без опт           | 7.960 ± 0.062  | -                | -               |
 | SoA бакеты        | 3.663 ± 0.057  | 2.17             | 2.17            |
 | Хеш функции       | 2.291 ± 0.025  | 1.59             | 3.45            |
 | Strlen/Strcmp     | 2.082 ± 0.031  | 1.11             | 3.83            |
