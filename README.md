@@ -40,7 +40,6 @@ valgrind  --tool=callgrind
    Возвращает сумму всех ASCII кодов в строке.
    Время выполнения: 0.348 ± 0.004с
    ![](img/AsciiSum_Hash.png)
-   <img width="979" height="325" alt="image" src="https://github.com/user-attachments/assets/94217c57-719b-49f4-98db-c9805f212ba0" />
 3) ### Rollleft
    На каждой итерации использует цикл. сдвиг влево с XOR'ом ASCII кода символа
    Время выполнения: 0.304 ± 0.002с
@@ -92,24 +91,26 @@ valgrind  --tool=callgrind
 ### На новом наборе:
   | Оптимизация | Название функции     | Время Выполнения, с  |
   |-------------|----------------------|----------------------|
-  | O3          | SRC32                | 7.960 ± 0.062        |
+  | O3          | SRC32                | 7.960 ± 0.162        |
   |             | SDBM                 | 5.907 ± 0.101        |
   |             | FNV1A                | 5.717 ± 0.088        |
   | O2          | CRC32                | 8.014 ± 0.055        |
   |             | SDBM                 | 6.076 ± 0.043        |
   |             | FNV1A                | 6.073 ± 0.173        |
   | O0          | CRC32                | 16.804 ± 0.158       |
-  |             | SDBM                 | 9.381 ± 0.014        |
+  |             | SDBM                 | 9.381 ± 0.084        |
   |             | FNV1A                | 9.239 s ± 0.120      |
   
-  
-
 ## Профилировщик функции CRC32
+
 <img width="1197" height="588" alt="image" src="https://github.com/user-attachments/assets/291eeeff-2b38-4cca-9e79-e7edc1995c7e" />
 
-  ## Профилировщик функции FNV1A
-  <img width="1188" height="566" alt="image" src="https://github.com/user-attachments/assets/4fab22cc-d518-4dca-a03e-4a22167fe697" />
+## Профилировщик функции FNV1A
+
+<img width="1496" height="585" alt="image" src="https://github.com/user-attachments/assets/77e4a8e3-2c64-4912-9ef3-e39f6f060682" />
+
 ## Профилировщик функции SDBM
+
 <img width="1197" height="607" alt="image" src="https://github.com/user-attachments/assets/fd4692c6-1b38-4272-a23f-df9cb506ae8a" />
 
 
@@ -132,14 +133,15 @@ valgrind  --tool=callgrind
 <img width="1183" height="627" alt="CRC32" src="https://github.com/user-attachments/assets/92cfa89f-777c-4264-9179-4788538f3d33" />
 
   ## Профилировщик функции FNV1A
-  <img width="1204" height="637" alt="FNV1A" src="https://github.com/user-attachments/assets/20bdc315-1284-4f57-b4e2-47ff9f5fae3b" />
+  <img width="1499" height="592" alt="image" src="https://github.com/user-attachments/assets/a34f0a07-ae2f-4c6f-ac47-7d5f6613c2c6" />
+
     
 ## Оптимизация Хеш функций
   Оптимизируем хеш функции SDBM, FNV1A и CRC32, переписав их на ассемблере
   | Название функции     | Время Выполнения, с  |
   |----------------------|----------------------|                           
-  | MySDBM               | 2.249 ± 0.011        |                           
   | MyCRC32              | 2.291 ± 0.025        |                           
+  | MySDBM               | 2.289 ± 0.011        |                           
   | MyFNV1A              | 2.309 ± 0.026        |
 
   Получили ускорение в 1.6 раз для функции MyCRC32
@@ -151,15 +153,15 @@ valgrind  --tool=callgrind
   - отдельной asm функции (ASM тип)
 
 | Название функции            | Тип программы  | Время Выполнения, с  |
-|-----------------------------|----------------------|------------------|
-| MySDBM                      | ASM                | 2.108 ± 0.034  |                       
-| MyCRC32                     | ASM                | 2.078 ± 0.021  |                         
-| MyFNV1A                     | ASM                | 2.172 ± 0.027  |
-| MySDBM                      | ASMINLINE          | 2.084 ± 0.045  |                        
-| MyCRC32                     | ASMINLINE          | 2.082 ± 0.031  |                  
-| MyFNV1A                     | ASMINLINE          | 2.131 ± 0.023  |
+|-----------------------------|----------------|----------------------|
+| MyCRC32                     | ASM            | 2.065 ± 0.020        |                         
+| MySDBM                      | ASM            | 2.095 ± 0.034        |                       
+| MyFNV1A                     | ASM            | 2.050 ± 0.062        |
+| MyCRC32                     | ASMINLINE      | 2.082 ± 0.031        |                  
+| MySDBM                      | ASMINLINE      | 2.084 ± 0.045        |                        
+| MyFNV1A                     | ASMINLINE      | 2.101 ± 0.023        |  
 
-Получили ускорение примерно на 5-6% (на 9% для CRC32)
+Получили ускорение примерно на 9-12% (на 11% для CRC32)
 
 ## Профилировщик CRC32 после strcmp, strlen
 <img width="1186" height="624" alt="image" src="https://github.com/user-attachments/assets/75a29060-05b5-4597-8fbd-bee0fe101404" />
@@ -171,5 +173,5 @@ valgrind  --tool=callgrind
 | без опт           | 7.960 ± 0.062  | -                | 0               |
 | SoA бакеты        | 3.663 ± 0.057  | 2.17             | 2.17            |
 | Хеш функции       | 2.291 ± 0.025  | 1.59             | 3.45            |
-| Strlen/Strcmp     | 2.082 ± 0.031  | 1.09             | 3.74            |
+| Strlen/Strcmp     | 2.082 ± 0.031  | 1.11             | 3.83            |
 
