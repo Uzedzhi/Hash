@@ -141,11 +141,14 @@ valgrind  --tool=callgrind
   | Название функции     | Время Выполнения, с  |
   |----------------------|----------------------|                           
   | MyCRC32              | 2.291 ± 0.025        |                           
-  | MySDBM               | 2.289 ± 0.011        |                           
+  | MySDBM               | 2.389 ± 0.011        |                           
   | MyFNV1A              | 2.309 ± 0.026        |
 
   Получили ускорение в 1.6 раз для функции MyCRC32
-  <img width="1198" height="559" alt="image" src="https://github.com/user-attachments/assets/c05f89ac-1313-47d4-9aec-de104a209ef0" />
+  
+## Профилировщик MyCRC32
+
+<img width="1198" height="559" alt="image" src="https://github.com/user-attachments/assets/c05f89ac-1313-47d4-9aec-de104a209ef0" />
 
 ## Оптимизация Strlen и Strcmp
   Видим, что в среднем функции strlen + strcmp занимают около 18% всего времени. Попробуем их оптимизировать с помощью:
@@ -155,23 +158,22 @@ valgrind  --tool=callgrind
 | Название функции            | Тип программы  | Время Выполнения, с  |
 |-----------------------------|----------------|----------------------|
 | MyCRC32                     | ASM            | 2.065 ± 0.020        |                         
-| MySDBM                      | ASM            | 2.095 ± 0.034        |                       
+| SDBM                        | ASM            | 2.095 ± 0.034        |                       
 | MyFNV1A                     | ASM            | 2.050 ± 0.062        |
 | MyCRC32                     | ASMINLINE      | 2.082 ± 0.031        |                  
-| MySDBM                      | ASMINLINE      | 2.084 ± 0.045        |                        
-| MyFNV1A                     | ASMINLINE      | 2.101 ± 0.023        |  
-
+| SDBM                        | ASMINLINE      | 2.084 ± 0.045        |                        
+| MyFNV1A                     | ASMINLINE      | 2.101 ± 0.023        | 
 Получили ускорение примерно на 9-12% (на 11% для CRC32)
 
 ## Профилировщик SDBM
 
-<img width="1494" height="583" alt="image" src="https://github.com/user-attachments/assets/ecaad0ac-45fa-4956-96f3-6960931b38f8" />
+<img width="1497" height="589" alt="image" src="https://github.com/user-attachments/assets/90d8ef58-2c39-4a71-b55d-5258ef6d7c3e" />
 
-## Профилировщик FNV1A
+## Профилировщик MyFNV1A
 
 <img width="1498" height="590" alt="image" src="https://github.com/user-attachments/assets/b5cc8777-f802-4c9c-9de4-e8c4dfe670ad" />
 
-## Профилировщик CRC32
+## Профилировщик MyCRC32
 
 <img width="1498" height="590" alt="image" src="https://github.com/user-attachments/assets/10c924e5-aafe-4333-ba4b-13964e00fbfb" />
 
