@@ -6,8 +6,8 @@
 
 #include <string.h>
 
+const size_t REP_COUNT   = 30;
 string TESTING_FILE_NAME = "texts/ALLTEXTSINONE.txt";
-extern "C" unsigned int MyCRC32_Hash(const char *str)   noexcept;
 
 #ifndef INIT_FUNC_IDX
 #define INIT_FUNC_IDX CRC32_Hash_E
@@ -27,11 +27,12 @@ int main(int argc, char *argv[]) {
                "укажите хотя бы один файл для загрузки в хэш таблицу");
 
     size_t NumOfTestingWords = 0;
-    char **TestingWords = GetTestingWords(TESTING_FILE_NAME, &NumOfTestingWords);
+    char *TestingWordsBuffer = NULL;
+    char **TestingWords = GetTestingWords(TESTING_FILE_NAME, &NumOfTestingWords, &TestingWordsBuffer);
     printf(MAGENTA "всего %zu слов для поиска\n" WHITE, NumOfTestingWords);
 
     HashMapCtor(Hmap, HASH_TABLE_SIZE);
-    Hmap->HashFunc = AllHashFuncs[INIT_FUNC_IDX];
+    Hmap->HashFunc = AllHashFuncs[INIT_FUNC_IDX].Ptr;
     size_t InitWords = HashAllFilesToHmap(Hmap, argc, argv);
     printf(MAGENTA "всего %zu слов в хешмапе\n" WHITE, InitWords);
     
@@ -40,18 +41,16 @@ int main(int argc, char *argv[]) {
                        InitWords, INIT_FUNC_IDX);
     #endif
 
-    // volatile size_t SumFoundWords = 0;
-    // for (size_t i = 0; i < NumOfTestingWords; i++) {
-    //     if ((i + 1) % (NumOfTestingWords / 2) == 0)
-    //         printf("половина слов найдена\n");
-    //     SumFoundWords += HmapFind(Hmap, TestingWords[i]);
-    // }
-    
-    // printf(GREEN "найдено %zu слов\n" WHITE, SumFoundWords);
-    for (size_t i = 0; i < NumOfTestingWords; i++) {
-        free(TestingWords[i]);
+    volatile size_t SumFoundWords = 0;
+    for (size_t rep = 0; rep < 100; rep++) {
+        for (size_t i = 0; i < NumOfTestingWords; i++) {
+            SumFoundWords += HmapFind(Hmap, TestingWords[i]);
+        }
     }
+    
+    printf(GREEN "найдено %zu слов\n" WHITE, SumFoundWords);
     free(TestingWords);
+    free(TestingWordsBuffer);
     HashMapDtor(Hmap);
     return 0;
 }

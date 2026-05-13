@@ -5,6 +5,7 @@
 #include "../my_libs/error_manage.h"
 #include "../my_libs/sassert.h"
 #include <chrono>
+#include <immintrin.h>
 
 #define EXTENSIVELOGS
 extern error_t error;
@@ -15,13 +16,20 @@ extern error_t error;
 #include <ctype.h>
 
 void HashMapCtor_internal(Hashmap_t *Hmap, size_t size) {
-    Hmap->size = size;
-    Hmap->Table = (list_t **) calloc(size, sizeof(list_t *));
+    Hmap->size  = size;
+    Hmap->Table = (bucket_t **) calloc(size, sizeof(bucket_t *));
 
     size_t HmapIndex = 0;
     for (size_t i = 0; i < Hmap->size; i++) {
-        listCtor(List);
-        Hmap->Table[HmapIndex++] = List;
+        char **ThreeFoldArray = (char **) calloc(START_ARR_SIZE * 3, sizeof(char *));
+        sassert(ThreeFoldArray, ERR_PTR_NULL_HMAP,
+                "не удалось выделить место для хем таблицы");
+        Hmap->Table[i]           = (bucket_t *) calloc(1, sizeof(bucket_t));
+        Hmap->Table[i]->Str      = ThreeFoldArray;
+        Hmap->Table[i]->Hashes   = (size_t *) ThreeFoldArray + START_ARR_SIZE;
+        Hmap->Table[i]->Strlens  = (size_t *) ThreeFoldArray + START_ARR_SIZE * 2;
+        Hmap->Table[i]->capacity = START_ARR_SIZE;
+        Hmap->Table[i]->size = 0;
     }
 }
 
@@ -29,9 +37,14 @@ HmapError_t HashMapDtor_internal(Hashmap_t *Hmap) {
     if (Hmap == NULL)
         return ERR_PTR_NULL_HMAP;
     
-    size_t HmapIndex = 0;
     for (size_t i = 0; i < Hmap->size; i++) {
-        listDtor(Hmap->Table[HmapIndex++]);
+        if (Hmap->Table[i]) {
+            for (size_t j = 0; j < Hmap->Table[i]->size; j++) {
+                free(Hmap->Table[i]->Str[j]);
+            }
+            free(Hmap->Table[i]->Str);
+            free(Hmap->Table[i]);
+        }
     }
     
     free(Hmap->Table);
@@ -55,18 +68,53 @@ char * GetBufferFromFile(FILE *fp, size_t FileSize) {
     return FileBuffer;
 }
 
-int add_with_intercept_check(list_t *List, const char * value) {
-    sassert(List, ERR_PTR_NULL);
+HmapError_t ReallocBucket(bucket_t *Bucket) {
+    sassert(Bucket, ERR_PTR_NULL_HMAP);
 
-    list_iterator_ctor(ListIter, List);
-    while (!list_iterator_end(&ListIter)) {
-        data_t CurValue = list_iterator_value(&ListIter);
-        if (CurValue != POISON && strcmp(CurValue, value) == 0)
-            return 0;
-        list_iterator_next(&ListIter);
-    }
+    size_t OldCapacity = Bucket->capacity;
+    size_t NewCapacity = Bucket->capacity * 2;
+    void *ThreeFoldBuffer = safe_realloc((void **) &Bucket->Str, NewCapacity * 3 * sizeof(char *));
     
-    add_in_head(List, (char*) value);
+    char *Base = (char *) ThreeFoldBuffer;
+    memmove(Base + NewCapacity * 2 * sizeof(char *), 
+            Base + OldCapacity * 2 * sizeof(char *), 
+            OldCapacity *            sizeof(char *));
+            
+    memmove(Base + NewCapacity * sizeof(char *), 
+            Base + OldCapacity * sizeof(char *), 
+            OldCapacity *        sizeof(char *));
+
+    Bucket->Str     = (char **)     ThreeFoldBuffer;
+    Bucket->Hashes  = (size_t *)    Base + NewCapacity;
+    Bucket->Strlens = (size_t *)    Base + NewCapacity * 2;
+    Bucket->capacity = NewCapacity;
+    sassert(Bucket->Str, ERR_PTR_NULL_HMAP,
+            "не удалось реаллоцировать место для бакета");
+
+    return OK_HMAP;
+}
+
+int add_with_intercept_check(size_t ValueHash, bucket_t *Bucket, const char * value) {
+    sassert(Bucket, ERR_PTR_NULL_HMAP);
+    sassert(value,  ERR_PTR_NULL_HMAP);
+
+    if (Bucket->size >= Bucket->capacity)
+        ReallocBucket(Bucket);
+    
+    size_t BucketSize   = Bucket->size;
+    size_t ValueStrlen  = strlen(value);
+    
+    for (size_t i = 0; i < BucketSize; i++) {
+        if (ValueHash   == Bucket->Hashes[i]    &&
+            ValueStrlen == Bucket->Strlens[i]   &&
+            strcmp(value, Bucket->Str[i]) == 0)
+            return 0;
+    }
+
+    Bucket->Str[BucketSize]         = strdup(value);
+    Bucket->Strlens[BucketSize]     = ValueStrlen;
+    Bucket->Hashes[BucketSize]      = ValueHash;
+    Bucket->size++;
     return 1;
 }
 
@@ -86,14 +134,28 @@ size_t HashAllWordsFromFiletoHmap(Hashmap_t *Hmap, const char * FileName, size_t
         if (WordsCount >= RemainingLimit)
             break;
 
-        if (HmapAdd(Hmap, token));
+        if (HmapAdd(Hmap, token))
             WordsCount++;
     
         token = strtok(NULL, WORD_DELIMS);
     }
     
+    free(FileBuffer);
     fclose(fp);
     return WordsCount;
+}
+
+void DumpBucketCsv(bucket_t *Bucket, FILE *fp) {
+    sassert(Bucket, ERR_PTR_NULL);
+    sassert(fp,     ERR_PTR_NULL);
+
+    for (size_t i = 0; i < Bucket->size; i++) {
+        char * Data = Bucket->Str[i];
+        if (Data == POISON)
+            fputs("PSN\n", fp);
+        else
+            fprintf(fp, "%s\n", Data);
+    }
 }
 
 // hmap бует храниться в формате <hash>,<val1>,<val2>,<val3>,...
@@ -107,7 +169,7 @@ HmapError_t WriteHmapToFile(Hashmap_t *Hmap, const char * FileName) {
     fprintf(fp, "%zu\n", Hmap->size);
     for (size_t i = 0; i < Hmap->size; i++) {
         fprintf(fp, "[%zu]\n", i);
-        DumplistCsv(Hmap->Table[i], fp);
+        DumpBucketCsv(Hmap->Table[i], fp);
     }
     fclose(fp);
 
@@ -131,23 +193,24 @@ Hashmap_t *ReadHmapFromFile(const char * FileName) {
 
     size_t FileSize = GetFileSize(fp);
     char *Buffer = GetBufferFromFile(fp, FileSize);
+    char *OrigBuffer = Buffer;
     fclose(fp);
 
     char *Pos = strtok(Buffer, "\n");
     size_t CurHash = 0;
 
-    size_t HmapSize = strtoull(Buffer, &Buffer, 10);
+    char *NextBuffer = Buffer;
+    size_t HmapSize = strtoull(NextBuffer, &NextBuffer, 10);
     HashMapCtor(Hmap, HmapSize);
 
-    while (*Pos) {
+    while (Pos && *Pos) {
         if (*Pos == '[')
             CurHash = strtoull(Pos + 1, &Pos, 10);
         else
-            add_with_intercept_check(Hmap->Table[CurHash], Pos);
+            add_with_intercept_check(CurHash, Hmap->Table[CurHash], Pos);
         Pos = strtok(NULL, "\n");
     }
-
-    free(Buffer);
+    free(OrigBuffer);
     return Hmap;
 }
 
@@ -156,28 +219,68 @@ int HmapAdd(Hashmap_t *Hmap, const char * value) {
     sassert(value,  ERR_PTR_NULL);
     CHECK_FUNC_AND_RET_IF_ERR(HmapVerifier(Hmap));
 
-    size_t Index = Hmap->HashFunc(value) % Hmap->size;
-    bool FuncRetValue = add_with_intercept_check(Hmap->Table[Index], value);
+    size_t ValueHash = Hmap->HashFunc(value);
+    size_t Index = ValueHash % Hmap->size;
+    bool FuncRetValue = add_with_intercept_check(ValueHash, Hmap->Table[Index], value);
     return FuncRetValue;
 }
 
-int HmapFind(Hashmap_t *Hmap, const char *key) {
-    sassert(Hmap, ERR_PTR_NULL);
-    sassert(key,  ERR_PTR_NULL);
+int HmapFind(Hashmap_t *Hmap, const char *value) {
+    sassert(Hmap,   ERR_PTR_NULL);
+    sassert(value,  ERR_PTR_NULL);
     CHECK_FUNC_AND_RET_IF_ERR(HmapVerifier(Hmap));
+    
+    size_t ValueHash    = Hmap->HashFunc(value);
+    size_t index        = ValueHash % Hmap->size;
+    bucket_t *Bucket    = Hmap->Table[index];
+    size_t BucketSize   = Bucket->size;
+    size_t ValueStrlen  = strlen(value);
 
-    size_t index = Hmap->HashFunc(key) % Hmap->size;
-    list_iterator_ctor(ListIter, Hmap->Table[index]);
-
-    while (!list_iterator_end(&ListIter)) {
-        if (strcmp(list_iterator_value(&ListIter), key) == 0)
+    size_t  *Hashes         = Bucket->Hashes;
+    size_t  *Strlens        = Bucket->Strlens;
+    char    **Str           = Bucket->Str;
+    
+    for (size_t i = 0; i < BucketSize; i++) {
+        if (ValueHash   == Hashes[i]    &&
+            ValueStrlen == Strlens[i]   &&
+            strcmp(value, Str[i]) == 0)
             return 1;
-        list_iterator_next(&ListIter);
     }
     return 0;
 }
 
-char **GetTestingWords(const char *FileName, size_t *NumOfWords) {
+int HmapRemove(Hashmap_t *Hmap, const char *value) {
+    sassert(Hmap,   ERR_PTR_NULL);
+    sassert(value,  ERR_PTR_NULL);
+    CHECK_FUNC_AND_RET_IF_ERR(HmapVerifier(Hmap));
+    
+    size_t ValueHash    = Hmap->HashFunc(value);
+    size_t index        = ValueHash % Hmap->size;
+    bucket_t *Bucket    = Hmap->Table[index];
+    size_t BucketSize   = Bucket->size;
+    size_t ValueStrlen  = strlen(value);
+    
+    for (size_t i = 0; i < BucketSize; i++) {
+        if (ValueHash   == Bucket->Hashes[i]    &&
+            ValueStrlen == Bucket->Strlens[i]   &&
+            strcmp(value, Bucket->Str[i]) == 0) {
+            
+            free(Bucket->Str[i]);
+            
+            if (i != BucketSize - 1) {
+                Bucket->Str[i]     = Bucket->Str[BucketSize - 1];
+                Bucket->Hashes[i]  = Bucket->Hashes[BucketSize - 1];
+                Bucket->Strlens[i] = Bucket->Strlens[BucketSize - 1];
+            }
+            
+            Bucket->size--;
+            return 1;
+        }
+    }
+    return 0;
+}
+
+char **GetTestingWords(const char *FileName, size_t *NumOfWords, char **TestingWordsArr) {
     sassert(FileName,   ERR_PTR_NULL_HMAP);
 
     FILE *fp = fopen(FileName, "rb");
@@ -200,7 +303,7 @@ char **GetTestingWords(const char *FileName, size_t *NumOfWords) {
             sassert(TestingWords, ERR_REALLOC_FAIL_HMAP);
         }
 
-        TestingWords[WordsRead] = strdup(token);
+        TestingWords[WordsRead] = token;
         WordsRead++;
         if (WordsRead >= MAX_READ_WORDS)
             break;
@@ -210,7 +313,7 @@ char **GetTestingWords(const char *FileName, size_t *NumOfWords) {
 
     *NumOfWords = WordsRead;
     fclose(fp);
-    free(FileBuffer);
+    *TestingWordsArr = FileBuffer;
     return TestingWords;
 }
 
@@ -236,17 +339,13 @@ HmapError_t HmapVerifier(Hashmap_t *Hmap) {
                              "Хеш таблица имеет нулевой адрес");
 
     for (size_t hash = 0; hash < Hmap->size; hash++) {
-        if (verify_list(Hmap->Table[hash]) != OK_HMAP)
-            ADD_ERROR_AND_RETURN(ERR_VERIFY_FAILED_HMAP);
-        
-        size_t ListSize = getListSize(Hmap->Table[hash]);
-        if (ListSize == 0)
+        size_t BucketSize = Hmap->Table[hash]->size;
+        if (BucketSize == 0)
             continue;
-        char * ArrayOfWords[ListSize] = {};
+        char * ArrayOfWords[BucketSize] = {};
 
-        list_iterator_ctor(ListIter, Hmap->Table[hash]);
-        for (size_t j = 0; j < ListSize; j++) {
-            data_t value = list_iterator_value(&ListIter);
+        for (size_t j = 0; j < BucketSize; j++) {
+            char *value = Hmap->Table[hash]->Str[j];
             ArrayOfWords[j] = value;
 
             if (Hmap->HashFunc(value) % Hmap->size != hash)
@@ -255,7 +354,6 @@ HmapError_t HmapVerifier(Hashmap_t *Hmap) {
             if (ValueInArray(value, ArrayOfWords, j))
                 ADD_ERROR_AND_RETURN(ERR_MULTIPLE_VALUES_HMAP, 
                                      "несколько одинаковых строк <%s> в одной ячейке", value);
-            list_iterator_next(&ListIter);
         }
     }
     return OK_HMAP;
@@ -273,7 +371,7 @@ HmapError_t PrintListSizeToFile(Hashmap_t *Hmap, const char * FileName) {
 
     fprintf(fp, "%zu\n", Hmap->size);
     for (size_t i = 0; i < Hmap->size; i++) {
-        fprintf(fp, "%zu\n", getListSize(Hmap->Table[i]));
+        fprintf(fp, "%zu\n", Hmap->Table[i]->size);
     }
 
     fclose(fp);

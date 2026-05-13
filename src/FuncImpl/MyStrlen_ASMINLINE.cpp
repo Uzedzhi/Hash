@@ -1,4 +1,5 @@
-extern "C" unsigned int MyStrlen_Hash(const char *str1) noexcept {
+#include <stdlib.h>
+extern "C" size_t __attribute__((always_inline)) MyStrlen(const char *str1) noexcept {
     unsigned int len = 1;
     __asm (
         ".intel_syntax noprefix\n"

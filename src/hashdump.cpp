@@ -132,9 +132,9 @@ double GetHiSquared(size_t *SizeArr,size_t Size, size_t Mean) {
 HmapError_t GetHmapStats(HmapStats_t * Stats, size_t HashFuncIdx) {
     sassert(Stats,  ERR_PTR_NULL_HMAP);
 
-    FILE *fp = fopen(ListSizePathStr[HashFuncIdx], "r");
+    FILE *fp = fopen(AllHashFuncs[HashFuncIdx].SizeDumpStr, "r");
     RET_ASSERT(fp, ERR_PTR_NULL_HMAP,
-                "не удалось открыть файл %s", ListSizePathStr[HashFuncIdx]);
+                "не удалось открыть файл %s", AllHashFuncs[HashFuncIdx].SizeDumpStr);
 
     size_t FileSize  = GetFileSize(fp);
     char *FileBuffer = GetBufferFromFile(fp, FileSize);
@@ -144,14 +144,14 @@ HmapError_t GetHmapStats(HmapStats_t * Stats, size_t HashFuncIdx) {
 
     size_t HmapSize = strtol(Pos, &Next, 10);
     RET_ASSERT(HmapSize && HmapSize < HMAP_MAX_SIZE && Pos != Next, ERR_INVALID_SYNTAX_HMAP,
-                   "неправильный синтаксис файла %s", ListSizePathStr[HashFuncIdx]);
+                   "неправильный синтаксис файла %s", AllHashFuncs[HashFuncIdx].SizeDumpStr);
     Pos = Next + 1;
     
     size_t *SizeArr = (size_t *) calloc(HmapSize, sizeof(size_t));
     for (size_t i = 0; i < HmapSize; i++) {
         long size = strtol(Pos, &Next, 10);
         RET_ASSERT(Pos != Next, ERR_INVALID_SYNTAX_HMAP,
-                   "неправильный синтаксис файла %s", ListSizePathStr[HashFuncIdx]);
+                   "неправильный синтаксис файла %s", AllHashFuncs[HashFuncIdx].SizeDumpStr);
         Pos = Next + 1;
 
         SizeArr[i] = size;
@@ -249,33 +249,32 @@ void PrintGnuplotHeaderInFile(FILE *fp, const char * file_name, int MaxIdx, size
     fprintf(fp, "set terminal pngcairo size 1800,600\n");
     fprintf(fp, "set output '%s'\n", file_name);
     fprintf(fp, "set grid\n");
-    fprintf(fp, "set title \"%s\" font \",20\" noenhanced\n", AllHashFuncsStr[HashFuncIdx]);
+    fprintf(fp, "set title \"%s\" font \",20\" noenhanced\n", AllHashFuncs[HashFuncIdx].Str);
     fprintf(fp, "set xzeroaxis lt 1 lw 1 lc rgb \"black\"\n");
     fprintf(fp, "set yzeroaxis lt 1 lw 1 lc rgb \"black\"\n");
     fprintf(fp, "set xrange [%d:%d]\n", -VIEW_DISTANCE, MaxIdx + VIEW_DISTANCE);
 }
 
-char * PrintGnuplotHistOfHmap(Hashmap_t *Hmap, size_t HashFuncIdx, int MaxIdx) {
+void PrintGnuplotHistOfHmap(Hashmap_t *Hmap, size_t HashFuncIdx, int MaxIdx) {
     sassert(Hmap, ERR_PTR_NULL);
 
     FILE *fp = popen("gnuplot", "w");
     sassert(fp, ERR_PTR_NULL);
 
-    PrintGnuplotHeaderInFile(fp, ImgPathStr[HashFuncIdx], MaxIdx, HashFuncIdx);
-    fprintf(fp, "plot \"%s\" skip 1 title \"\" \n", ListSizePathStr[HashFuncIdx]);
+    PrintGnuplotHeaderInFile(fp, AllHashFuncs[HashFuncIdx].ImgDumpStr, MaxIdx, HashFuncIdx);
+    fprintf(fp, "plot \"%s\" skip 1 title \"\" \n", AllHashFuncs[HashFuncIdx].SizeDumpStr);
 
     pclose(fp);
-    return strdup(ImgPathStr[HashFuncIdx]);
 }
 
 HmapError_t DumpToAllMeasurementsCsv(size_t HashFuncIdx, HmapStats_t HmapStats, SpeedStats_t SpeedStats) {
     const char *GroupStart = strchr(SPEEDTESTS_FILE_NAME, '/');
-    RET_ASSERT(GroupStart, ERR_PTR_NULL_HMAP,
-                "Имя файла <%s> неправильное", SPEEDTESTS_FILE_NAME);
+    if (!GroupStart)
+        return OK_HMAP;
     
     const char *FileStart = strchr(GroupStart + 1, '/');
-    RET_ASSERT(FileStart, ERR_PTR_NULL_HMAP,
-                "Имя файла <%s> неправильное", SPEEDTESTS_FILE_NAME);
+    if (!FileStart)
+        return OK_HMAP;
     
     char Group[MAX_STR_SIZE] = {};
     strncpy(Group, GroupStart + 1, FileStart - GroupStart - 1);
@@ -300,14 +299,14 @@ HmapError_t DumpToAllMeasurementsCsv(size_t HashFuncIdx, HmapStats_t HmapStats, 
 
 HmapError_t DumpHmapToHtml(Hashmap_t *Hmap, size_t NumTestingWords,
                            size_t NumReadWords, size_t HashFuncIdx) {
-    sassert(Hmap,       ERR_PTR_NULL_HMAP);
+    sassert(Hmap, ERR_PTR_NULL_HMAP);
 
     FILE *fp = fopen(DUMP_FILE_NAME, "w");
     RET_ASSERT(fp, ERR_PTR_NULL_HMAP, 
                "не удалось открыть файл: %s", DUMP_FILE_NAME);
 
     PrintHTMLHeaders(fp);
-    PrintListSizeToFile(Hmap, ListSizePathStr[HashFuncIdx]);
+    PrintListSizeToFile(Hmap, AllHashFuncs[HashFuncIdx].SizeDumpStr);
 
     HmapStats_t HmapStats = {};
     GetHmapStats(&HmapStats, HashFuncIdx);
@@ -317,7 +316,7 @@ HmapError_t DumpHmapToHtml(Hashmap_t *Hmap, size_t NumTestingWords,
 
     DumpToAllMeasurementsCsv(HashFuncIdx, HmapStats, SpeedStats);
     fprintf(fp, "<div class=\"stats\">\n");
-    fprintf(fp, "<h2>Дамп функции %s</h2>\n", AllHashFuncsStr[HashFuncIdx]);
+    fprintf(fp, "<h2>Дамп функции %s</h2>\n", AllHashFuncs[HashFuncIdx].Str);
     fprintf(fp, "<div class=\"tag-container\">\n");
     fprintf(fp, "<h3>Размер таблицы:        <br>  %zu</h3>\n",           Hmap->size);
     fprintf(fp, "<h3>Всего элементов:       <br>  %zu</h3>\n",           HmapStats.SumListSizes);
@@ -330,20 +329,19 @@ HmapError_t DumpHmapToHtml(Hashmap_t *Hmap, size_t NumTestingWords,
     fprintf(fp, "</div></div>\n\n");
 
     fprintf(fp, "<div class=\"stats-speed\">\n");
-    fprintf(fp, "<h2>Дамп Скорости %s</h2>\n", AllHashFuncsStr[HashFuncIdx]);
+    fprintf(fp, "<h2>Дамп Скорости %s</h2>\n", AllHashFuncs[HashFuncIdx].Str);
     fprintf(fp, "<div class=\"tag-container-speed\">\n");
     fprintf(fp, "<h3>Среднее время выполнения:          <br>    %.3lf ± %.3lf</h3>\n", SpeedStats.mean, SpeedStats.std);
     fprintf(fp, "<h3>мединное время выполнения:         <br>    %.3lf</h3>\n", SpeedStats.median);
     fprintf(fp, "<h3>Количество итераций:               <br>    20</h3>\n");
     fprintf(fp, "</div></div>\n\n");
 
-    char *ImagePath = PrintGnuplotHistOfHmap(Hmap, HashFuncIdx, HmapStats.MaxIdx);
-    fprintf(fp, "<img src=\"../%s\" alt=\"гистограмма распределения размеров списков\">\n", ImagePath);
-    free(ImagePath);
+    PrintGnuplotHistOfHmap(Hmap, HashFuncIdx, HmapStats.MaxIdx);
+    fprintf(fp, "<img src=\"../../%s\" alt=\"гистограмма распределения размеров списков\">\n", AllHashFuncs[HashFuncIdx].ImgDumpStr);
 
     size_t ZeroListsCount = 0;
     for (size_t i = 0; i < Hmap->size; i++) {
-        size_t ListSize = getListSize(Hmap->Table[i]);
+        size_t ListSize = Hmap->Table[i]->size;
         if (ListSize == 0) {
             ZeroListsCount++;
             continue;
@@ -357,17 +355,16 @@ HmapError_t DumpHmapToHtml(Hashmap_t *Hmap, size_t NumTestingWords,
         fprintf(fp, "<summary>[%zu] : %zu элементов</summary>", i, ListSize);
         
         fprintf(fp, "<div class=\"ListExt\">\n");
-        list_iterator_ctor(Iter, Hmap->Table[i]);
-        while (!list_iterator_end(&Iter)) {
-            data_t val = list_iterator_value(&Iter);
+        bucket_t *Bucket = Hmap->Table[i];
+        for (size_t i = 0; i < Bucket->size; i++) {
+            char *val = Bucket->Str[i];
             
             if (val == POISON)
                 fprintf(fp, "<span class=\"node\" style=\"color:red\">POISON</span>\n");
             else
                 fprintf(fp, "<span class=\"node\">%s</span>\n", val);
-            list_iterator_next(&Iter);
             
-            if (!list_iterator_end(&Iter))
+            if (i != Bucket->size - 1)
                 fprintf(fp, "<span class=\"arrow\">⇒</span>\n");
         }
         

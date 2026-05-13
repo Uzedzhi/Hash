@@ -21,7 +21,7 @@ void print_order_of_data(FILE * fp, list_t *list) {
     }
 }
 
-error_t listCtor_internal(list_t *list) {
+void listCtor_internal(list_t *list) {
     sassert(list, ERR_PTR_NULL);
 
     list->free = 1;
@@ -49,7 +49,6 @@ error_t listCtor_internal(list_t *list) {
     list->next[0] = 0;
     list->prev[0] = 0;
 
-    return error;
 }
 
 void * safe_realloc(void ** memory, size_t new_size) {
@@ -327,9 +326,9 @@ size_t getListSize(const list_t *list) {
     return list->size;
 }
 
-error_t listDtor_internal(list_t *list) {
+void listDtor_internal(list_t *list) {
     if (list == NULL)
-        return error;
+        return;
     
     if (list->data != NULL)
         free(list->data);
@@ -338,5 +337,4 @@ error_t listDtor_internal(list_t *list) {
     if (list->next != NULL)
         free(list->next);
     free(list);
-    return error;
 }

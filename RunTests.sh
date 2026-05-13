@@ -3,9 +3,9 @@
 
 PROGRAM_RUN_CMD="./bin/hash texts/usa.txt"
 INCLUDES_PATH="-Iincludes/ -I../my_libs/ -Imnt/c/users/azerty/my_project/my_libs/"
-ALL_HASH_FUNCS="AsciiSum_Hash_E"
+ALL_HASH_FUNCS="MyCRC32_Hash_E"
 ALL_CPP_FILES="src/hashdump.cpp src/hashfuncs.cpp src/list.cpp src/list_dump.cpp src/HashAssembly.cpp src/hash.cpp"
-TEST_DIR_NAME="PROFILER_TEST"
+TEST_DIR_NAME="NEW_FIND_OPT"
 FLAGS="-O3 -mavx2 -msse4.2 -g -DDUMP_ENABLE -DNDEBUG"
 
 run_profiler() {
@@ -42,10 +42,7 @@ rm_trash() {
 make_obj() {
     rm_trash
 
-    compile_nasm "MyCRC32_ASM"
-    compile_nasm "MyFNV1A_ASM"
-    compile_nasm "MySDBM_ASM"
-
+    compile_file "MyCRC32_INTRIN"
     if [ $1 == "ASM" ]; then
         compile_nasm "MyStrlen_ASM"
         compile_nasm "MyStrcmp_ASM"
@@ -69,6 +66,7 @@ compile_program() {
 }
 
 make_obj "$1"
+
 for FuncIdx in $ALL_HASH_FUNCS
 do
     compile_program "$FuncIdx" "$1"
@@ -79,7 +77,7 @@ do
     \n=================================================     \
     \n\e[0m"
 
-    run_dump        "$FuncIdx"
-    # run_speedtest   "$FuncIdx"
     # run_profiler    "$FuncIdx"
+    run_speedtest   "$FuncIdx"
+    # run_dump        "$FuncIdx"
 done

@@ -1,4 +1,4 @@
-extern "C" int MyStrcmp(const char *str1, const char *str2) noexcept {
+extern "C" int __attribute__((always_inline)) MyStrcmp(const char *str1, const char *str2) noexcept {
     int cmp;
     __asm (
         ".intel_syntax noprefix\n"
@@ -9,24 +9,17 @@ extern "C" int MyStrcmp(const char *str1, const char *str2) noexcept {
         "vpcmpeqb ymm1, ymm0, [%[str2]]\n"
         "vpcmpeqb ymm2, ymm0, ymm2\n"
 
-        "vpmovmskb ecx, ymm1\n"
-        "vpmovmskb edx, ymm2\n"
+        "vpmovmskb edx, ymm1\n"
+        "vpmovmskb ecx, ymm2\n"
 
-        "not ecx\n"
+        "not edx\n"
+        "lea eax, [ecx - 1]\n"
+        "xor ecx, eax\n"
 
-        "xor %[result], %[result]\n"
-        "test ecx, ecx\n"
-        "jz .Exit\n"
-        
-        "bsf ecx, ecx\n"
-        "bsf edx, edx\n"
+        "test ecx, edx\n"
+        "setnz al\n"
+        "movzx %[result], al\n"
 
-        "mov esi, 1\n"
-
-        "cmp ecx, edx\n"
-        "cmovbe %[result], esi\n"
-
-        ".Exit:\n"
         "vzeroupper\n"
         ".att_syntax prefix\n"
         : [result] "=r" (cmp)
