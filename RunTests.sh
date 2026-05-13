@@ -3,12 +3,10 @@
 
 PROGRAM_RUN_CMD="./bin/hash texts/usa.txt"
 INCLUDES_PATH="-Iincludes/ -I../my_libs/ -Imnt/c/users/azerty/my_project/my_libs/"
-ALL_HASH_FUNCS="AsciiSum_Hash_E Rollleft_Hash_E Rollright_Hash_E SDBM_Hash_E CRC32_Hash_E FNV1A_Hash_E"
+ALL_HASH_FUNCS="AsciiSum_Hash_E"
 ALL_CPP_FILES="src/hashdump.cpp src/hashfuncs.cpp src/list.cpp src/list_dump.cpp src/HashAssembly.cpp src/hash.cpp"
 TEST_DIR_NAME="PROFILER_TEST"
-SPEED_FLAGS="-O3 -mavx2 -msse4.2 -g"
-DUMP_FLAGS="-O3 -mavx2 -msse4.2 -DDUMP_ENABLE -g"
-FLAGS="-O3 -mavx2 -msse4.2"
+FLAGS="-O3 -mavx2 -msse4.2 -g -DDUMP_ENABLE -DNDEBUG"
 
 run_profiler() {
     mkdir -p "callgrind/${TEST_DIR_NAME}"
@@ -41,7 +39,7 @@ rm_trash() {
     rm bin/hash
 }
 
-compile_program() {
+make_obj() {
     rm_trash
 
     compile_nasm "MyCRC32_ASM"
@@ -56,43 +54,32 @@ compile_program() {
         compile_file "MyStrlen_ASMINLINE"
     fi
 
-    g++ $LIBS_L_PATH $INCLUDES_PATH                   \
-        $2 -DUSE_$1                                   \
+    g++ $LIBS_L_PATH $INCLUDES_PATH                     \
+        $FLAGS -DUSE_$1                                 \
         -c $ALL_CPP_FILES
-    
-    g++ $LIBS_L_PATH $INCLUDES_PATH                   \
-        $2 -DUSE_$1                                   \
-        *.o -o bin/hash
-     rm *.o
 }
 
+compile_program() {
+    g++ $LIBS_L_PATH $INCLUDES_PATH                     \
+        $FLAGS -DUSE_$2 -DINIT_FUNC_IDX=$1              \
+        -c src/HashAssembly.cpp
+    g++ $LIBS_L_PATH $INCLUDES_PATH                     \
+        $FLAGS -DUSE_$2                                 \
+        *.o -o bin/hash
+}
 
+make_obj "$1"
+for FuncIdx in $ALL_HASH_FUNCS
+do
+    compile_program "$FuncIdx" "$1"
+    echo -e                                                 \
+    "\e[0;35m                                               \
+    \n=================================================     \
+            \n\tnow testing func $FuncIdx                   \
+    \n=================================================     \
+    \n\e[0m"
 
-if [ $2 == "SPEED" ]; then
-    compile_program $1 $SPEED_FLAGS
-    for FuncIdx in $ALL_HASH_FUNCS
-    do
-        echo -e                                                 \
-        "\e[0;35m                                               \
-        \n=================================================     \
-                \n\tnow testing func $FuncIdx                   \
-        \n=================================================     \
-        \n\e[0m"
-
-        run_profiler    "$FuncIdx"
-        run_speedtest   "$FuncIdx"
-    done
-elif [ $2 == "DUMP" ]; then
-    compile_program $1 $DUMP_FLAGS
-    for FuncIdx in $ALL_HASH_FUNCS
-    do
-        echo -e                                                 \
-        "\e[0;35m                                               \
-        \n=================================================     \
-                \n\tnow testing func $FuncIdx                   \
-        \n=================================================     \
-        \n\e[0m"
-
-        run_dump "$FuncIdx"
-    done
-fi
+    run_dump        "$FuncIdx"
+    # run_speedtest   "$FuncIdx"
+    # run_profiler    "$FuncIdx"
+done
