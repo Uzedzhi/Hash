@@ -34,16 +34,6 @@ valgrind  --tool=callgrind
 
 ## Первая версия: результаты
 
-AlwaysZero_Hash_E.txt	84.958145	0.783262
-FirstAsciiChar_Hash_E.txt	2.910116	0.008284
-AsciiSum_Hash_E.txt	0.347769	0.003893
-Strlen_Hash_E.txt	5.443138	0.024737
-Rollleft_Hash_E.txt	0.303567	0.002335
-Rollright_Hash_E.txt	0.323492	0.002031
-SDBM_Hash_E.txt	0.307145	0.003037
-CRC32_Hash_E.txt	0.311401	0.001114
-FNV1A_Hash_E.txt	0.314088	0.004759
-
 Сравнивалось 9 хеш функций:
 1) ### THEBESTHASHFUNCINTHEWORLD
     Она просто возвращает 0. Все слова попадают в один бакет
@@ -56,13 +46,15 @@ FNV1A_Hash_E.txt	0.314088	0.004759
 3) ### AsciiSum
    Возвращает сумму всех ASCII кодов в строке.
    Время выполнения: 0.348 ± 0.004с
-   ![](img/Ascii_Hash.png)
+   
    <img width="1110" height="371" alt="image" src="https://github.com/user-attachments/assets/0cff4d86-e66a-4e17-8f9b-f3df0175cfb6" />
-4) ### Strlen
+   
+   ![](img/AsciiSum_Hash.png)
+5) ### Strlen
     Возвращает длину строки
    Время выполнения: 5.443 ± 0.024с
    ![](img/Strlen_Hash.png)
-5) ### Rollleft
+6) ### Rollleft
    На каждой итерации использует цикл. сдвиг влево с XOR'ом ASCII кода символа
    Время выполнения: 0.304 ± 0.002с
    ![](img/Rollleft_Hash.png)
