@@ -5,8 +5,8 @@ PROGRAM_RUN_CMD="./bin/hash texts/usa.txt"
 INCLUDES_PATH="-Iincludes/ -I../my_libs/ -Imnt/c/users/azerty/my_project/my_libs/"
 ALL_HASH_FUNCS="MyCRC32_Hash_E"
 ALL_CPP_FILES="src/hashdump.cpp src/hashfuncs.cpp src/list.cpp src/list_dump.cpp src/HashAssembly.cpp src/hash.cpp"
-TEST_DIR_NAME="NEW_FIND_OPT"
-FLAGS="-O3 -mavx2 -msse4.2 -g -DDUMP_ENABLE -DNDEBUG"
+TEST_DIR_NAME="NEW_TEST_OPT2"
+FLAGS="-O3 -mavx2 -msse4.2 -g -DNDEBUG -DDUMP_ENABLE -flto"
 
 run_profiler() {
     mkdir -p "callgrind/${TEST_DIR_NAME}"
@@ -18,7 +18,7 @@ run_profiler() {
 run_speedtest() {
     mkdir -p "listdump/${TEST_DIR_NAME}"
     mkdir -p "hyperfine/${TEST_DIR_NAME}"
-    hyperfine "$PROGRAM_RUN_CMD" --warmup 5 --runs 20 --export-csv hyperfine/${TEST_DIR_NAME}/$1.txt
+    hyperfine "$PROGRAM_RUN_CMD" --warmup 5 --runs 5 --export-csv hyperfine/${TEST_DIR_NAME}/$1.txt
 }
 
 run_dump() {
@@ -43,10 +43,10 @@ make_obj() {
     rm_trash
 
     compile_file "MyCRC32_INTRIN"
-    if [ $1 == "ASM" ]; then
+    if [ "$1" == "ASM" ]; then
         compile_nasm "MyStrlen_ASM"
         compile_nasm "MyStrcmp_ASM"
-    elif [ $1 == "ASMINLINE" ]; then
+    elif [ "$1" == "ASMINLINE" ]; then
         compile_file "MyStrcmp_ASMINLINE"
         compile_file "MyStrlen_ASMINLINE"
     fi
@@ -78,6 +78,6 @@ do
     \n\e[0m"
 
     # run_profiler    "$FuncIdx"
-    run_speedtest   "$FuncIdx"
-    # run_dump        "$FuncIdx"
+    # run_speedtest   "$FuncIdx"
+    run_dump        "$FuncIdx"
 done
