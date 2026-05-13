@@ -2,8 +2,7 @@
 #define HASHFUNCS_H
 
 typedef const char * const string;
-extern "C" unsigned int MyStrlen_Hash(const char *str)  noexcept;
-extern "C" unsigned int MyCRC32_Hash(const char *str)   noexcept;
+extern "C" unsigned int MyCRC32_Hash(const char *str) noexcept;
 unsigned int SDBM_Hash(const char * str);
 unsigned int Rollright_Hash(const char * str);
 unsigned int Rollleft_Hash(const char * str);
@@ -17,39 +16,52 @@ unsigned int FNV1A_Hash(const char * str);
 unsigned int CircRightShift(unsigned int value, unsigned int shift);
 unsigned int CircLeftShift(unsigned int value, unsigned int shift);
 
-#define IMG_PATH_NAME       "img"
-#define LISTSIZES_PATH_NAME "listsizes"
-#define LISTDUMP_PATH_NAME  "listdump"
+#define IMG_DUMP_PATH  "img"
+#define SIZE_DUMP_PATH "listsizes"
+#define HTML_DUMP_PATH "listdump"
 
-#define X(n)                            \
-    n(AlwaysZero_Hash       , 0)        \
-    n(FirstAsciiChar_Hash   , 1)        \
-    n(Strlen_Hash           , 2)        \
-    n(AsciiSum_Hash         , 3)        \
-    n(Rollleft_Hash         , 4)        \
-    n(Rollright_Hash        , 5)        \
-    n(SDBM_Hash             , 6)        \
-    n(CRC32_Hash            , 7)        \
-    n(FNV1A_Hash            , 8)        \
-    n(MyStrlen_Hash         , 9)        \
-    n(MyCRC32_Hash          , 10)    
-#define INIT_POINTERS(FuncName, Ind) FuncName ,
-#define INIT_STR(FuncName, Ind)     #FuncName ,
-#define INIT_IMG_PATHS(FuncName, Ind)           IMG_PATH_NAME       "/" #FuncName ".png"  ,
-#define INIT_LISTSIZES_PATHS(FuncName, Ind)     LISTSIZES_PATH_NAME "/" #FuncName ".txt"  ,
-#define INIT_LISTDUMP_PATHS(FuncName, Ind)      LISTDUMP_PATH_NAME  "/" #FuncName ".html" ,
-#define INIT_IND(FuncName, Ind) FuncName##_E = Ind,
+typedef struct HashDump_t {
+    unsigned int (*const Ptr)(const char *);
+    const char * Str;
+    const char * SizeDumpStr;
+    const char * HTMLDumpStr;
+    const char * ImgDumpStr;
+} HashDump_t;
 
-const char * const ListSizePathStr[] = {X(INIT_LISTSIZES_PATHS)};
-const char * const ListDumpPathStr[] = {X(INIT_LISTDUMP_PATHS)};
-const char * const ImgPathStr[]      = {X(INIT_IMG_PATHS)};
-enum AllHashFuncInd {
-    X(INIT_IND)
+#define MAKE_HASH_FUNCS_STRUCT(HashFunc)            \
+    {                                               \
+        HashFunc,                                   \
+        #HashFunc,                                  \
+        SIZE_DUMP_PATH  "/" #HashFunc ".txt"  ,     \
+        HTML_DUMP_PATH  "/" #HashFunc ".html" ,     \
+        IMG_DUMP_PATH   "/" #HashFunc ".png"        \
+    }
+
+const HashDump_t AllHashFuncs[] = {
+    MAKE_HASH_FUNCS_STRUCT(AlwaysZero_Hash),
+    MAKE_HASH_FUNCS_STRUCT(FirstAsciiChar_Hash),
+    MAKE_HASH_FUNCS_STRUCT(Strlen_Hash),
+    MAKE_HASH_FUNCS_STRUCT(AsciiSum_Hash),
+    MAKE_HASH_FUNCS_STRUCT(Rollleft_Hash),
+    MAKE_HASH_FUNCS_STRUCT(Rollright_Hash),
+    MAKE_HASH_FUNCS_STRUCT(SDBM_Hash),
+    MAKE_HASH_FUNCS_STRUCT(CRC32_Hash),
+    MAKE_HASH_FUNCS_STRUCT(FNV1A_Hash),
+    MAKE_HASH_FUNCS_STRUCT(MyCRC32_Hash),
 };
 
-unsigned int (*const AllHashFuncs[])(const char *) = {X(INIT_POINTERS)};
-const char * const AllHashFuncsStr[] = {X(INIT_STR)};
-const size_t NUM_OF_HASH_FUNCS = sizeof(AllHashFuncs) / sizeof(AllHashFuncs[0]);
+enum AllHashFuncs_E {
+    AlwaysZero_Hash_E             = 0,
+    FirstAsciiChar_Hash_E         = 1,
+    Strlen_Hash_E                 = 2,
+    AsciiSum_Hash_E               = 3,
+    Rollleft_Hash_E               = 4,
+    Rollright_Hash_E              = 5,
+    SDBM_Hash_E                   = 6,
+    CRC32_Hash_E                  = 7,
+    FNV1A_Hash_E                  = 8,
+    MyCRC32_Hash_E                = 9,
+};
 
 string CSV_DUMP_FILE_NAME   = "tests/AllMeasurements.csv";
 #ifndef SPEEDTESTS_FILE_NAME
@@ -60,14 +72,6 @@ string CSV_DUMP_FILE_NAME   = "tests/AllMeasurements.csv";
 #define DUMP_FILE_NAME "listdump/dump.html"
 #endif // DUMP_FILE_NAME
 
-#undef X
-#undef INIT_POINTERS
-#undef INIT_STR
-#undef INIT_IMG_PATHS
-#undef INIT_LISTSIZES_PATHS
-#undef INIT_LISTDUMP_PATHS
-#undef IMG_PATH_NAME      
-#undef LISTSIZES_PATH_NAME
-#undef LISTDUMP_PATH_NAME 
+#undef MAKE_HASH_FUNCS_STRUCT
 
 #endif // HASHFUNCS_H

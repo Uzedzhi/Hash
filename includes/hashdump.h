@@ -26,9 +26,6 @@ typedef struct {
     double MaxTime;
 } SpeedStats_t; 
 
-#define CSV_DUMP_PRINT_HEADER()
-#define CSV_DUMP_PRINT_HMAP_PARAMS()
-
 HmapError_t PrintListSizeToFile(Hashmap_t *Hmap, const char * FileName);
 HmapError_t DumpHeaderToCsv();
 double GetStdVal(double Array[NUM_OF_MEASURE_REPS], double MeanVal);

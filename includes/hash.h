@@ -2,8 +2,10 @@
 #define HASH_H
 
 #include "list.h"
+
 const  size_t HMAP_MAX_SIZE             = 0xfffffff;
 const  size_t HASH_TABLE_SIZE           = 4999;
+const  size_t START_ARR_SIZE            = 80;
 const  size_t NUM_OF_MEASURE_REPS       = 100;
 const  int    VIEW_DISTANCE             = 10;
 const  size_t MAX_READ_WORDS            = 10000000;
@@ -18,8 +20,16 @@ string WORD_DELIMS                      = " \n\r";
     }  
 
 typedef struct {
+    char    **Str;
+    size_t  *Strlens;
+    size_t  *Hashes;
     size_t size;
-    list_t **Table;
+    size_t capacity;
+} bucket_t;
+
+typedef struct {
+    size_t size;
+    bucket_t **Table;
     unsigned int (*HashFunc)(const char *);
 } Hashmap_t;
 
@@ -73,7 +83,6 @@ enum HmapError_t {
 
 // =======================================================================
 
-
 void HashMapCtor_internal(Hashmap_t *Hmap, size_t size);
 HmapError_t HashMapDtor_internal(Hashmap_t *Hmap);
 
@@ -85,9 +94,10 @@ Hashmap_t *ReadHmapFromFile(const char * FileName);
 char *GetBufferFromFile(FILE *fp, size_t FileSize);
 size_t GetFileSize(FILE *fp);
 
-char **GetTestingWords(const char *FileName, size_t *NumOfWords);
-int HmapFind(Hashmap_t *Hmap, const char *key);
+char **GetTestingWords(const char *FileName, size_t *NumOfWords, char **TestingWordsArr);
+int HmapFind(Hashmap_t *Hmap, const char *value);
+int HmapRemove(Hashmap_t *Hmap, const char *value);
 int HmapAdd(Hashmap_t *Hmap, const char * value);
-int add_with_intercept_check(list_t *List, const char *value);
+int add_with_intercept_check(size_t ValueHash, bucket_t *Bucket, const char * value);
 HmapError_t HmapVerifier(Hashmap_t *Hmap);
 #endif // HASH_H

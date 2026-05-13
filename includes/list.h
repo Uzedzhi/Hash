@@ -148,7 +148,7 @@ data_t list_iterator_value(list_iterator_t *it);
 bool list_iterator_end(list_iterator_t *it);
 size_t getListSize(const list_t *list);
 void * safe_realloc(void ** memory, size_t new_size);
-error_t listDtor_internal(list_t *list);
+void listDtor_internal(list_t *list);
 void add_in_head(list_t *list, data_t value);
 size_t get_next_element(list_t *list, size_t index);
 error_t remove_element_internal(list_t *list, int index);
@@ -159,11 +159,13 @@ void linearize_list(list_t *list);
 int max(int a, int b);
 void linearize_list_by_order(list_t *list_t);
 error_t reallocate_down_list(list_t *list, size_t factor, bool by_order);
-error_t listCtor_internal(list_t *list);
+void listCtor_internal(list_t *list);
 void print_order_of_data(FILE * fp, list_t *list);
 void print_command_execution_failed(const char * file_name);
 extern "C" int MyStrcmp(const char *s1, const char *s2) noexcept;
+extern "C" size_t MyStrlen(const char *s1) noexcept;
 #if defined(USE_ASM) || defined(USE_ASMINLINE) || defined(USE_INTRIN)
+#define strlen(str1) MyStrlen(str1)
 #define strcmp(str1, str2) MyStrcmp(str1, str2)
 #endif
 #endif // LIST_H
