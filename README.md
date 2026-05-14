@@ -125,6 +125,7 @@ valgrind  --tool=callgrind
   <img width="1499" height="592" alt="image" src="https://github.com/user-attachments/assets/a34f0a07-ae2f-4c6f-ac47-7d5f6613c2c6" />
     
 ## Оптимизация Хеш функций
+
   Оптимизируем хеш функции SDBM, FNV1A и CRC32, переписав их на ассемблере
   | Название функции     | Время Выполнения, с  |
   |----------------------|----------------------|                           
@@ -134,11 +135,15 @@ valgrind  --tool=callgrind
   Получили ускорение в 1.6 раз для функции MyCRC32
   
 ## Профилировщик MyCRC32
+
 <img width="1198" height="559" alt="image" src="https://github.com/user-attachments/assets/c05f89ac-1313-47d4-9aec-de104a209ef0" />
+
 ## Оптимизация Strlen и Strcmp
+
   Видим, что в среднем функции strlen + strcmp занимают около 18% всего времени. Попробуем их оптимизировать с помощью:
   - __asm вставки (ASMINLINE тип)
   - отдельной asm функции (ASM тип)
+
 | Название функции            | Тип программы  | Время Выполнения, с  |
 |-----------------------------|----------------|----------------------|
 | MyCRC32                     | ASMINLINE            | 2.065 ± 0.020        |                         
@@ -148,11 +153,17 @@ valgrind  --tool=callgrind
 | SDBM                        | ASM      | 2.084 ± 0.045        |                        
 | MyFNV1A                     | ASM      | 2.101 ± 0.023        | 
 Получили ускорение примерно на 9-12% (на 11% для CRC32)
+
 ## Профилировщик SDBM
+
 <img width="1497" height="589" alt="image" src="https://github.com/user-attachments/assets/90d8ef58-2c39-4a71-b55d-5258ef6d7c3e" />
+
 ## Профилировщик MyFNV1A
+
 <img width="1498" height="590" alt="image" src="https://github.com/user-attachments/assets/b5cc8777-f802-4c9c-9de4-e8c4dfe670ad" />
+
 ## Профилировщик MyCRC32
+
 <img width="1498" height="590" alt="image" src="https://github.com/user-attachments/assets/10c924e5-aafe-4333-ba4b-13964e00fbfb" />
 
 ## Итоги
