@@ -3,9 +3,9 @@
 
 PROGRAM_RUN_CMD="./bin/hash texts/usa.txt"
 INCLUDES_PATH="-Iincludes/ -I../my_libs/ -Imnt/c/users/azerty/my_project/my_libs/"
-ALL_HASH_FUNCS="MyCRC32_Hash_E"
+ALL_HASH_FUNCS="CRC32_Hash_E"
 ALL_CPP_FILES="src/hashdump.cpp src/hashfuncs.cpp src/list.cpp src/list_dump.cpp src/HashAssembly.cpp src/hash.cpp"
-TEST_DIR_NAME="NEW_TEST_OPT2"
+TEST_DIR_NAME="IMG_TEST"
 FLAGS="-O3 -mavx2 -msse4.2 -g -DNDEBUG -DDUMP_ENABLE -flto"
 
 run_profiler() {

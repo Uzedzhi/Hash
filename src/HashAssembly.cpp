@@ -42,11 +42,11 @@ int main(int argc, char *argv[]) {
     #endif
 
     volatile size_t SumFoundWords = 0;
-    for (size_t rep = 0; rep < 100; rep++) {
-        for (size_t i = 0; i < NumOfTestingWords; i++) {
-            SumFoundWords += HmapFind(Hmap, TestingWords[i]);
-        }
-    }
+    // for (size_t rep = 0; rep < 100; rep++) {
+    //     for (size_t i = 0; i < NumOfTestingWords; i++) {
+    //         SumFoundWords += HmapFind(Hmap, TestingWords[i]);
+    //     }
+    // }
     
     printf(GREEN "найдено %zu слов\n" WHITE, SumFoundWords);
     free(TestingWords);

@@ -56,24 +56,38 @@ unsigned int Rollright_Hash(const char * str) {
     return hash;
 }
 
-unsigned int CRC32_Hash(const char *data) {
-    unsigned int hash = 0xFFFFFFFF;
-    
-    while (*data) {
-        hash ^= *data;
-        //          num of bits in a byte
-        //                 \|/
-        for (size_t j = 0; j < 8; j++) {
+#include <cstdint>
+#include <cstddef>
+#include <array>
+
+unsigned int CRC32_Hash(const char* data) {
+    const size_t NumPolynPower8 = 256;
+    const unsigned int polynomial = 0xEDB88320; 
+    unsigned int Table[NumPolynPower8] = {};
+
+    for (unsigned int i = 0; i < NumPolynPower8; ++i) {
+        unsigned int hash = i;
+        for (unsigned int j = 0; j < 8; ++j) {
             if (hash & 1)
-                hash = (hash >> 1) ^ 0xEDB88320;
+                hash = (hash >> 1) ^ polynomial;
             else
                 hash >>= 1;
         }
+        Table[i] = hash;
+    }
+
+
+    unsigned int hash = 0xFFFFFFFF;
+
+    while (*data) {
+        int index = (hash ^ *data) & 0xFF;
+        
+        hash = (hash >> 8) ^ Table[index];
         data++;
     }
-    return ~hash; 
-}
 
+    return hash ^ 0xFFFFFFFF;
+}
 unsigned int FNV1A_Hash(const char *str) {
     unsigned int hash = 2166136261;
     while (*str) {
